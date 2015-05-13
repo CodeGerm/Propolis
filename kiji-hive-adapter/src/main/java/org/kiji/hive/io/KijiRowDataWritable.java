@@ -594,7 +594,12 @@ public class KijiRowDataWritable implements Writable, Closeable {
     WritableUtils.writeVInt(out, mSchemas.size());
     for (Map.Entry<KijiColumnName, Schema> entry : mSchemas.entrySet()) {
       WritableUtils.writeString(out, entry.getKey().getName());
-      WritableUtils.writeString(out, entry.getValue().toString());
+      if(entry.getValue()==null)
+    	  WritableUtils.writeString(out, "\"string\"");
+      else{
+    	  //LOG.warn("schema value type: "+entry.getValue().toString());
+    	  WritableUtils.writeString(out, entry.getValue().toString());
+      }
     }
   }
 

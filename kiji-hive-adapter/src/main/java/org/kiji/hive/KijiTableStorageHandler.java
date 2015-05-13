@@ -19,16 +19,20 @@
 
 package org.kiji.hive;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.hadoop.hive.ql.metadata.DefaultStorageHandler;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.kiji.schema.KijiURI;
 
 /**
@@ -52,6 +56,7 @@ public class KijiTableStorageHandler extends DefaultStorageHandler {
   /** {@inheritDoc} */
   @Override
   public Class<? extends SerDe> getSerDeClass() {
+	  LOG.warn("ANYBODY?");
     return KijiTableSerDe.class;
   }
 
@@ -66,6 +71,25 @@ public class KijiTableStorageHandler extends DefaultStorageHandler {
   public void configureOutputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
     configureKijiJobProperties(tableDesc, jobProperties);
   }
+  
+  /** {@inheritDoc} */
+  @Override
+  public void configureTableJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
+    configureKijiJobProperties(tableDesc, jobProperties);
+  }
+  
+  /** {@inheritDoc} */
+  @Override
+  public void configureJobConf(TableDesc tableDesc, JobConf jobConf) {
+	  Map<String, String> jobProperties =new HashMap<String, String>();
+	  Iterator<Entry<String, String>>itr=jobConf.iterator();
+	  while(itr.hasNext()){
+		  Entry<String, String> entry=itr.next();
+		  jobProperties.put(entry.getKey(), entry.getValue());
+	  }
+   configureKijiJobProperties(tableDesc, jobProperties);
+  }
+  
 
   /**
    * Helper method to share logic between {@link #configureInputJobProperties} and
@@ -75,7 +99,17 @@ public class KijiTableStorageHandler extends DefaultStorageHandler {
    * @param jobProperties receives properties copied or transformed
    */
   private void configureKijiJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
-    final KijiURI kijiURI = KijiTableInfo.getURIFromProperties(tableDesc.getProperties());
+	  LOG.debug("ANYBODY?");
+	  for(Entry<String, String> entry:jobProperties.entrySet()){
+		  LOG.debug(entry.getKey()+":"+entry.getValue());
+    }
+	Properties tableProperties = tableDesc.getProperties();
+	 for(Entry<Object, Object> entry:tableProperties.entrySet()){
+		 LOG.debug(entry.getKey().toString()+":"+entry.getValue().toString());
+		 jobProperties.put(entry.getKey().toString(), entry.getValue().toString());
+	    }
+	 
+	final KijiURI kijiURI = KijiTableInfo.getURIFromProperties(tableDesc.getProperties());
     jobProperties.put(KijiTableOutputFormat.CONF_KIJI_TABLE_URI, kijiURI.toString());
 
     // We need to propagate the table name for the jobs to know which data request to use.
